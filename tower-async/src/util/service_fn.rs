@@ -60,10 +60,11 @@ impl<T> fmt::Debug for ServiceFn<T> {
     }
 }
 
-impl<T, F, Request, R, E> Service<Request> for ServiceFn<T>
+impl<T: Send, F, Request: Send, R, E> Service<Request> for ServiceFn<T>
 where
     T: Fn(Request) -> F,
-    F: Future<Output = Result<R, E>>,
+    F: Future<Output = Result<R, E>> + Send,
+    Self: Sync
 {
     type Response = R;
     type Error = E;

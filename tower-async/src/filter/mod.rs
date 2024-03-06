@@ -33,13 +33,17 @@ pub use self::{
 
 use crate::BoxError;
 use futures_util::TryFutureExt;
-use tower_async_service::Service;
+use tower_async_service::SendableService;
 
 /// Conditionally dispatch requests to the inner service based on a [predicate].
 ///
 /// [predicate]: Predicate
 #[derive(Clone, Debug)]
-pub struct Filter<T, U> {
+pub struct Filter<T, U>
+where
+    T: Send,
+    U: Send,
+{
     inner: T,
     predicate: U,
 }
@@ -49,14 +53,22 @@ pub struct Filter<T, U> {
 ///
 /// [asynchronous predicate]: AsyncPredicate
 #[derive(Clone, Debug)]
-pub struct AsyncFilter<T, U> {
+pub struct AsyncFilter<T, U>
+where
+    T: Send,
+    U: Send,
+{
     inner: T,
     predicate: U,
 }
 
 // ==== impl Filter ====
 
-impl<T, U> Filter<T, U> {
+impl<T, U> Filter<T, U>
+where
+    T: Send,
+    U: Send,
+{
     /// Returns a new [`Filter`] service wrapping `inner`.
     pub fn new(inner: T, predicate: U) -> Self {
         Self { inner, predicate }
@@ -89,11 +101,13 @@ impl<T, U> Filter<T, U> {
     }
 }
 
-impl<T, U, Request> Service<Request> for Filter<T, U>
+impl<T, U, Request> SendableService<Request> for Filter<T, U>
 where
-    U: Predicate<Request>,
-    T: Service<U::Request>,
+    U: Predicate<Request> + Send + Sync,
+    U::Request: Send,
+    T: SendableService<U::Request> + Sync,
     T::Error: Into<BoxError>,
+    Request: Send,
 {
     type Response = T::Response;
     type Error = BoxError;
@@ -108,7 +122,11 @@ where
 
 // ==== impl AsyncFilter ====
 
-impl<T, U> AsyncFilter<T, U> {
+impl<T, U> AsyncFilter<T, U>
+where
+    T: Send,
+    U: Send,
+{
     /// Returns a new [`AsyncFilter`] service wrapping `inner`.
     pub fn new(inner: T, predicate: U) -> Self {
         Self { inner, predicate }
@@ -141,11 +159,14 @@ impl<T, U> AsyncFilter<T, U> {
     }
 }
 
-impl<T, U, Request> Service<Request> for AsyncFilter<T, U>
+impl<T, U, Request> SendableService<Request> for AsyncFilter<T, U>
 where
-    U: AsyncPredicate<Request>,
-    T: Service<U::Request> + Clone,
+    T: Send + Sync,
+    U: AsyncPredicate<Request> + Send + Sync,
+    U::Request: Send,
+    T: SendableService<U::Request> + Clone,
     T::Error: Into<BoxError>,
+    Request: Send,
 {
     type Response = T::Response;
     type Error = BoxError;

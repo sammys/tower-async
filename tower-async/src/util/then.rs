@@ -48,12 +48,13 @@ impl<S, F> Then<S, F> {
     }
 }
 
-impl<S, F, Request, Response, Error, Fut> Service<Request> for Then<S, F>
+impl<S, F: Send, Request: Send, Response, Error, Fut> Service<Request> for Then<S, F>
 where
     S: Service<Request>,
     S::Error: Into<Error>,
     F: Fn(Result<S::Response, S::Error>) -> Fut,
-    Fut: Future<Output = Result<Response, Error>>,
+    Fut: Future<Output = Result<Response, Error>> + Send,
+    Self: Sync
 {
     type Response = Response;
     type Error = Error;

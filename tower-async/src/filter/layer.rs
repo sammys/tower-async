@@ -40,7 +40,7 @@ impl<U> FilterLayer<U> {
     }
 }
 
-impl<U: Clone, S> Layer<S> for FilterLayer<U> {
+impl<U: Clone + Send, S: Send> Layer<S> for FilterLayer<U> {
     type Service = Filter<S, U>;
 
     fn layer(&self, service: S) -> Self::Service {
@@ -62,7 +62,7 @@ impl<U> AsyncFilterLayer<U> {
     }
 }
 
-impl<U: Clone, S> Layer<S> for AsyncFilterLayer<U> {
+impl<U: Clone + Send, S: Send> Layer<S> for AsyncFilterLayer<U> {
     type Service = AsyncFilter<S, U>;
 
     fn layer(&self, service: S) -> Self::Service {

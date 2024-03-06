@@ -44,8 +44,10 @@ impl<T, P, Request> Service<Request> for Limit<T, P>
 where
     T: Service<Request>,
     T::Error: Into<BoxError>,
-    P: policy::Policy<Request>,
-    P::Error: Into<BoxError>,
+    P: policy::Policy<Request> + Sync,
+    P::Error: Into<BoxError> + Send,
+    P::Guard: Send,
+    Request: Send,
 {
     type Response = T::Response;
     type Error = BoxError;

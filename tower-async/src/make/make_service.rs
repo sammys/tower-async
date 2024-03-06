@@ -16,7 +16,7 @@ pub(crate) mod shared;
 /// requests on that new TCP stream.
 ///
 /// This is essentially a trait alias for a [`Service`] of [`Service`]s.
-pub trait MakeService<Target, Request>: Sealed<(Target, Request)> {
+pub trait MakeService<Target, Request: Send>: Sealed<(Target, Request)> {
     /// Responses given by the service
     type Response;
 
@@ -33,7 +33,7 @@ pub trait MakeService<Target, Request>: Sealed<(Target, Request)> {
     fn make_service(
         &self,
         target: Target,
-    ) -> impl std::future::Future<Output = Result<Self::Service, Self::MakeError>>;
+    ) -> impl std::future::Future<Output = Result<Self::Service, Self::MakeError>> + Send;
 
     /// Consume this [`MakeService`] and convert it into a [`Service`].
     ///
@@ -117,14 +117,14 @@ pub trait MakeService<Target, Request>: Sealed<(Target, Request)> {
     }
 }
 
-impl<M, S, Target, Request> Sealed<(Target, Request)> for M
+impl<M, S, Target: Send, Request: Send> Sealed<(Target, Request)> for M
 where
     M: Service<Target, Response = S>,
     S: Service<Request>,
 {
 }
 
-impl<M, S, Target, Request> MakeService<Target, Request> for M
+impl<M, S, Target: Send, Request: Send> MakeService<Target, Request> for M
 where
     M: Service<Target, Response = S>,
     S: Service<Request>,
@@ -172,10 +172,11 @@ where
     }
 }
 
-impl<M, S, Target, Request> Service<Target> for IntoService<M, Request>
+impl<M, S, Target: Send, Request: Send> Service<Target> for IntoService<M, Request>
 where
     M: Service<Target, Response = S>,
     S: Service<Request>,
+    Self: Send + Sync,
 {
     type Response = M::Response;
     type Error = M::Error;
@@ -191,14 +192,18 @@ where
 /// See the documentation on [`as_service`][as] for details.
 ///
 /// [as]: MakeService::as_service
-pub struct AsService<'a, M, Request> {
+pub struct AsService<'a, M, Request>
+where
+    Request: Send,
+{
     make: &'a M,
     _marker: PhantomData<Request>,
 }
 
 impl<M, Request> fmt::Debug for AsService<'_, M, Request>
 where
-    M: fmt::Debug,
+    M: fmt::Debug + Send,
+    Request: Send,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AsService")
@@ -207,16 +212,20 @@ where
     }
 }
 
-impl<M, S, Target, Request> Service<Target> for AsService<'_, M, Request>
-where
-    M: Service<Target, Response = S>,
-    S: Service<Request>,
-{
-    type Response = M::Response;
-    type Error = M::Error;
+// impl<'a, 'b, M, S, Target: Send, Request: Send + 'b> Service<Target> for &'b AsService<'a, M, Request>
+// where
+//     M: Service<Target, Response = S>,
+//     S: Service<Request> + Sync + ?Sized,
+//     'a: 'b,
+//     Self: Send + Sync,
+//     // Self::Error: Send + 'b,
+//     Self::Response: Send + 'b,
+// {
+//     type Response = M::Response;
+//     type Error = M::Error;
 
-    #[inline]
-    async fn call(&self, target: Target) -> Result<Self::Response, Self::Error> {
-        self.make.make_service(target).await
-    }
-}
+//     #[inline]
+//     async fn call(&self, target: Target) -> Result<Self::Response, Self::Error> {
+//         self.make.make_service(target).await
+//     }
+// }

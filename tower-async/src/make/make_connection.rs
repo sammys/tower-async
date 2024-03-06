@@ -21,9 +21,9 @@ pub trait MakeConnection<Target>: Sealed<(Target,)> {
     ) -> impl std::future::Future<Output = Result<Self::Connection, Self::Error>>;
 }
 
-impl<S, Target> Sealed<(Target,)> for S where S: Service<Target> {}
+impl<S, Target: Send> Sealed<(Target,)> for S where S: Service<Target> {}
 
-impl<C, Target> MakeConnection<Target> for C
+impl<C, Target: Send> MakeConnection<Target> for C
 where
     C: Service<Target>,
     C::Response: AsyncRead + AsyncWrite,

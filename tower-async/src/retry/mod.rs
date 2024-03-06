@@ -37,10 +37,12 @@ impl<P, S> Retry<P, S> {
     }
 }
 
-impl<P, S, Request> Service<Request> for Retry<P, S>
+impl<P, S, Request: Send> Service<Request> for Retry<P, S>
 where
-    P: Policy<Request, S::Response, S::Error>,
+    P: Policy<Request, S::Response, S::Error> + Send + Sync,
     S: Service<Request>,
+    S::Error: Send,
+    S::Response: Send,
 {
     type Response = S::Response;
     type Error = S::Error;

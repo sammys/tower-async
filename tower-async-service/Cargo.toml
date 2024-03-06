@@ -20,6 +20,8 @@ categories = ["asynchronous", "network-programming"]
 edition = "2021"
 
 [dependencies]
+async-trait = "*"
+trait-variant = "*"
 
 [dev-dependencies]
 futures = "0.3"

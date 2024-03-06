@@ -513,7 +513,7 @@ impl<L> ServiceBuilder<L> {
     ///     .check_service::<MyService, _, WrappedResponse, _>();
     /// ```
     #[inline]
-    pub fn check_service<S, T, U, E>(self) -> Self
+    pub fn check_service<S, T: Send, U, E>(self) -> Self
     where
         L: Layer<S>,
         L::Service: Service<T, Response = U, Error = E>,

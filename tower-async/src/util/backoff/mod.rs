@@ -22,9 +22,9 @@ pub trait MakeBackoff {
 /// A backoff trait where a single mutable reference represents a single
 /// backoff session. Implementors must also implement [`Clone`] which will
 /// reset the backoff back to the default state for the next session.
-pub trait Backoff {
+pub trait Backoff: Send {
     /// Initiate the next backoff in the sequence.
-    fn next_backoff(&self) -> impl std::future::Future<Output = ()>;
+    fn next_backoff(&self) -> impl std::future::Future<Output = ()> + Send;
 }
 
 #[cfg(feature = "util-tokio")]

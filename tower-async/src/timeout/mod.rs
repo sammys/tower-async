@@ -39,7 +39,7 @@ impl<T> Timeout<T> {
     }
 }
 
-impl<S, Request> Service<Request> for Timeout<S>
+impl<S, Request: Send> Service<Request> for Timeout<S>
 where
     S: Service<Request>,
     S::Error: Into<crate::BoxError>,

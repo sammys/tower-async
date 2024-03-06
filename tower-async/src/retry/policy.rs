@@ -78,7 +78,7 @@ pub trait Policy<Req, Res, E> {
         &self,
         req: &mut Req,
         result: &mut Result<Res, E>,
-    ) -> impl std::future::Future<Output = bool>;
+    ) -> impl std::future::Future<Output = bool> + Send;
 
     /// Tries to clone a request before being passed to the inner service.
     ///

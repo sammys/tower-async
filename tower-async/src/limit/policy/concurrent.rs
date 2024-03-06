@@ -92,9 +92,9 @@ impl Drop for ConcurrentGuard {
     }
 }
 
-impl<B, Request> Policy<Request> for ConcurrentPolicy<B>
+impl<B, Request: Send> Policy<Request> for ConcurrentPolicy<B>
 where
-    B: Backoff,
+    B: Backoff + Sync,
 {
     type Guard = ConcurrentGuard;
     type Error = Infallible;
@@ -128,7 +128,7 @@ impl std::fmt::Display for LimitReached {
 
 impl std::error::Error for LimitReached {}
 
-impl<Request> Policy<Request> for ConcurrentPolicy<()> {
+impl<Request: Send> Policy<Request> for ConcurrentPolicy<()> {
     type Guard = ConcurrentGuard;
     type Error = LimitReached;
 

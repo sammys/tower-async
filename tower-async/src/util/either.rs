@@ -18,7 +18,7 @@ pub enum Either<A, B> {
     Right(B),
 }
 
-impl<A, B, Request> Service<Request> for Either<A, B>
+impl<A, B, Request: Send> Service<Request> for Either<A, B>
 where
     A: Service<Request>,
     B: Service<Request, Response = A::Response, Error = A::Error>,

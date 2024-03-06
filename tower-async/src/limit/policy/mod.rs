@@ -20,7 +20,7 @@ pub enum PolicyOutput<Guard, Error> {
 
 /// A limit policy is used to determine whether a request is allowed to proceed,
 /// and if not, how to handle it.
-pub trait Policy<Request> {
+pub trait Policy<Request>: Send + Sync {
     /// The guard type that is returned when the request is allowed to proceed.
     ///
     /// See [`PolicyOutput::Ready`].
@@ -39,5 +39,5 @@ pub trait Policy<Request> {
     fn check(
         &self,
         request: &mut Request,
-    ) -> impl std::future::Future<Output = PolicyOutput<Self::Guard, Self::Error>>;
+    ) -> impl std::future::Future<Output = PolicyOutput<Self::Guard, Self::Error>> + Send;
 }

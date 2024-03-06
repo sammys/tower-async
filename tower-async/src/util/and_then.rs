@@ -48,12 +48,14 @@ impl<S, F> AndThen<S, F> {
     }
 }
 
-impl<S, F, Request, Fut, Output, Error> Service<Request> for AndThen<S, F>
+impl<S, F: Send, Request: Send, Fut, Output, Error> Service<Request> for AndThen<S, F>
 where
     S: Service<Request>,
-    S::Error: Into<Error>,
+    S::Error: Into<Error> + Send,
+    S::Response: Send,
     F: Fn(S::Response) -> Fut,
-    Fut: std::future::Future<Output = Result<Output, Error>>,
+    Fut: std::future::Future<Output = Result<Output, Error>> + Send,
+    Self: Sync
 {
     type Response = Output;
     type Error = Error;

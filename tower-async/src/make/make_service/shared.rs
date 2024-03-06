@@ -16,9 +16,10 @@ impl<S> Shared<S> {
     }
 }
 
-impl<S, T> Service<T> for Shared<S>
+impl<S, T: Send> Service<T> for Shared<S>
 where
-    S: Clone,
+    S: Clone + Sync,
+    Self: Send
 {
     type Response = S;
     type Error = Infallible;

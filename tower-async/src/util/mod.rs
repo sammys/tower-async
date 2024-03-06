@@ -31,7 +31,10 @@ use crate::layer::util::Identity;
 
 /// An extension trait for `Service`s that provides a variety of convenient
 /// adapters
-pub trait ServiceExt<Request>: tower_async_service::Service<Request> {
+pub trait ServiceExt<Request>: tower_async_service::Service<Request> + Send
+where
+    Request: Send,
+{
     /// Consume this `Service`, calling it with the provided request once and only once.
     fn oneshot(
         self,
@@ -531,7 +534,7 @@ pub trait ServiceExt<Request>: tower_async_service::Service<Request> {
     fn filter<F, NewRequest>(self, filter: F) -> crate::filter::Filter<Self, F>
     where
         Self: Sized,
-        F: crate::filter::Predicate<NewRequest>,
+        F: crate::filter::Predicate<NewRequest> + Send,
     {
         crate::filter::Filter::new(self, filter)
     }
@@ -708,7 +711,7 @@ pub trait ServiceExt<Request>: tower_async_service::Service<Request> {
     }
 }
 
-impl<T: ?Sized, Request> ServiceExt<Request> for T where T: tower_async_service::Service<Request> {}
+impl<T: ?Sized + Send, Request: Send> ServiceExt<Request> for T where T: tower_async_service::Service<Request> {}
 
 /// Convert an `Option<Layer>` into a [`Layer`].
 ///

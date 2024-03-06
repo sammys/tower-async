@@ -47,10 +47,11 @@ impl<S, F> MapResponse<S, F> {
     }
 }
 
-impl<S, F, Request, Response> Service<Request> for MapResponse<S, F>
+impl<S, F: Send, Request: Send, Response> Service<Request> for MapResponse<S, F>
 where
     S: Service<Request>,
     F: Fn(S::Response) -> Response,
+    Self: Sync,
 {
     type Response = Response;
     type Error = S::Error;

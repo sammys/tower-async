@@ -90,7 +90,7 @@ where
 
 impl<R> MakeBackoff for ExponentialBackoffMaker<R>
 where
-    R: Rng + Clone,
+    R: Rng + Clone + Send,
 {
     type Backoff = ExponentialBackoff<R>;
 
@@ -143,9 +143,10 @@ impl<R: Rng> ExponentialBackoff<R> {
     }
 }
 
-impl<R> Backoff for ExponentialBackoff<R>
+impl<R: Send> Backoff for ExponentialBackoff<R>
 where
     R: Rng,
+    Self: Sync,
 {
     async fn next_backoff(&self) {
         let base = self.base();
