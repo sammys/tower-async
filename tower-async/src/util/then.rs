@@ -48,12 +48,14 @@ impl<S, F> Then<S, F> {
     }
 }
 
-impl<S, F: Send, Request: Send, Response, Error, Fut> Service<Request> for Then<S, F>
+#[async_trait::async_trait]
+impl<S, F: Send, Request, Response, Error, Fut> Service<Request> for Then<S, F>
 where
     S: Service<Request>,
     S::Error: Into<Error>,
     F: Fn(Result<S::Response, S::Error>) -> Fut,
     Fut: Future<Output = Result<Response, Error>> + Send,
+    for<'async_trait>Request: Send + 'async_trait,
     Self: Sync
 {
     type Response = Response;

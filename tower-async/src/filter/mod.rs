@@ -101,13 +101,14 @@ where
     }
 }
 
-impl<T, U, Request> SendableService<Request> for Filter<T, U>
+#[async_trait::async_trait]
+impl<'a, T, U, Request> SendableService<Request> for Filter<T, U>
 where
     U: Predicate<Request> + Send + Sync,
     U::Request: Send,
     T: SendableService<U::Request> + Sync,
     T::Error: Into<BoxError>,
-    Request: Send,
+    for<'async_trait>Request: Send + 'async_trait,
 {
     type Response = T::Response;
     type Error = BoxError;
@@ -159,6 +160,7 @@ where
     }
 }
 
+#[async_trait::async_trait]
 impl<T, U, Request> SendableService<Request> for AsyncFilter<T, U>
 where
     T: Send + Sync,
@@ -166,7 +168,7 @@ where
     U::Request: Send,
     T: SendableService<U::Request> + Clone,
     T::Error: Into<BoxError>,
-    Request: Send,
+    for<'async_trait>Request: Send + 'async_trait,
 {
     type Response = T::Response;
     type Error = BoxError;

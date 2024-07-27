@@ -16,9 +16,11 @@ impl<S> Shared<S> {
     }
 }
 
-impl<S, T: Send> Service<T> for Shared<S>
+#[async_trait::async_trait]
+impl<S, T> Service<T> for Shared<S>
 where
     S: Clone + Sync,
+    for<'async_trait>T: Send + 'async_trait,
     Self: Send
 {
     type Response = S;

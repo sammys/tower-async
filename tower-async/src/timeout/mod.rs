@@ -39,10 +39,12 @@ impl<T> Timeout<T> {
     }
 }
 
-impl<S, Request: Send> Service<Request> for Timeout<S>
+#[async_trait::async_trait]
+impl<S, Request> Service<Request> for Timeout<S>
 where
     S: Service<Request>,
     S::Error: Into<crate::BoxError>,
+    for<'async_trait>Request: Send + 'async_trait,
 {
     type Response = S::Response;
     type Error = crate::BoxError;

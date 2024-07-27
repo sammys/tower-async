@@ -193,6 +193,7 @@
 /// The original tower library had a `poll_ready` method which
 /// was used to implement backpressure. This was removed in this fork in
 /// favor of the above approach.
+#[async_trait::async_trait]
 pub trait Service<Request>: Send + Sync
 where
     Request: Send,
@@ -205,8 +206,10 @@ where
     type Error;
 
     /// Process the request and return the response asynchronously.
-    #[must_use = "futures do nothing unless you `.await` or poll them"]
-    fn call(&self, req: Request) -> impl std::future::Future<Output = Result<Self::Response, Self::Error>> + Send;
+    // #[must_use = "futures do nothing unless you `.await` or poll them"]
+    // fn call(&self, req: Request) -> impl std::future::Future<Output = Result<Self::Response, Self::Error>> + Send;
+
+    async fn call(&self, req: Request) -> Result<Self::Response, Self::Error>;
 }
 
 /// An asynchronous function from a `Request` to a `Response`.
@@ -389,7 +392,7 @@ where
 /// The original tower library had a `poll_ready` method which
 /// was used to implement backpressure. This was removed in this fork in
 /// favor of the above approach.
-// #[async_trait::async_trait]
+#[async_trait::async_trait]
 pub trait SendableService<Request>: Send {
     /// Responses given by the service.
     type Response;
@@ -398,26 +401,35 @@ pub trait SendableService<Request>: Send {
     type Error;
 
     /// Process the request and return the response asynchronously.
-    #[must_use = "futures do nothing unless you `.await` or poll them"]
-    fn call(&self, req: Request) -> impl std::future::Future<Output = Result<Self::Response, Self::Error>> + Send;
-    // async fn call(&self, req: Request) -> Result<Self::Response, Self::Error>;
+    // #[must_use = "futures do nothing unless you `.await` or poll them"]
+    // fn call(&self, req: Request) -> impl std::future::Future<Output = Result<Self::Response, Self::Error>> + Send;
+    async fn call(&self, req: Request) -> Result<Self::Response, Self::Error>;
 }
 
+#[async_trait::async_trait]
 impl<'a, S, Request> Service<Request> for &'a mut S
 where
     S: Service<Request> + 'a,
-    Request: Send,
+    for<'async_trait>Request: Send + 'async_trait,
 {
     type Response = S::Response;
     type Error = S::Error;
 
-    fn call(&self, request: Request) -> impl std::future::Future<
-        Output = Result<
-            <&'a mut S as Service<Request>>::Response,
-            <&'a mut S as Service<Request>>::Error,
-        >,
-    > {
-        (**self).call(request)
+    // fn call(&self, request: Request) -> impl std::future::Future<
+    //     Output = Result<
+    //         <&'a mut S as Service<Request>>::Response,
+    //         <&'a mut S as Service<Request>>::Error,
+    //     >,
+    // > {
+    //     (**self).call(request)
+    // }
+
+    async fn call(&self, request: Request) -> Result<
+        <&'async_trait mut S as Service<Request>>::Response,
+        <&'async_trait mut S as Service<Request>>::Error,
+    >
+    {
+        (**self).call(request).await
     }
 }
 
@@ -439,15 +451,20 @@ where
 //     }
 // }
 
+#[async_trait::async_trait]
 impl<S, Request> Service<Request> for Box<S>
 where
     S: Service<Request> + ?Sized,
-    Request: Send,
+    for<'async_trait>Request: Send + 'async_trait,
 {
     type Response = S::Response;
     type Error = S::Error;
 
-    fn call(&self, request: Request) -> impl std::future::Future<Output = Result<Self::Response, Self::Error>> {
-        (**self).call(request)
+    // fn call(&self, request: Request) -> impl std::future::Future<Output = Result<Self::Response, Self::Error>> {
+    //     (**self).call(request)
+    // }
+
+    async fn call(&self, request: Request) -> Result<Self::Response, Self::Error> {
+        (**self).call(request).await
     }
 }

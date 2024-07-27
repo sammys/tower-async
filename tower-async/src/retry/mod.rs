@@ -37,12 +37,14 @@ impl<P, S> Retry<P, S> {
     }
 }
 
-impl<P, S, Request: Send> Service<Request> for Retry<P, S>
+#[async_trait::async_trait]
+impl<P, S, Request> Service<Request> for Retry<P, S>
 where
     P: Policy<Request, S::Response, S::Error> + Send + Sync,
     S: Service<Request>,
     S::Error: Send,
     S::Response: Send,
+    for<'async_trait>Request: Send + 'async_trait,
 {
     type Response = S::Response;
     type Error = S::Error;

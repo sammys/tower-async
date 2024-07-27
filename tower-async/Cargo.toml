@@ -44,6 +44,7 @@ util = ["__common", "futures-util"]
 util-tokio = ["util", "tokio/time"]
 
 [dependencies]
+async-trait = "*"
 tower-async-layer = { version = "0.2", path = "../tower-async-layer" }
 tower-async-service = { version = "0.2", path = "../tower-async-service" }
 

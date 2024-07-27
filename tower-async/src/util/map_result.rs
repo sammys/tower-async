@@ -48,10 +48,12 @@ impl<S, F> MapResult<S, F> {
     }
 }
 
-impl<S, F: Send, Request: Send, Response, Error> Service<Request> for MapResult<S, F>
+#[async_trait::async_trait]
+impl<S, F: Send, Request, Response, Error> Service<Request> for MapResult<S, F>
 where
     S: Service<Request>,
     F: Fn(Result<S::Response, S::Error>) -> Result<Response, Error>,
+    for<'async_trait>Request: Send + 'async_trait,
     Self: Sync
 {
     type Response = Response;

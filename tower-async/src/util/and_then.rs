@@ -48,13 +48,15 @@ impl<S, F> AndThen<S, F> {
     }
 }
 
-impl<S, F: Send, Request: Send, Fut, Output, Error> Service<Request> for AndThen<S, F>
+#[async_trait::async_trait]
+impl<S, F: Send, Request, Fut, Output, Error> Service<Request> for AndThen<S, F>
 where
     S: Service<Request>,
     S::Error: Into<Error> + Send,
     S::Response: Send,
     F: Fn(S::Response) -> Fut,
     Fut: std::future::Future<Output = Result<Output, Error>> + Send,
+    for<'async_trait>Request: Send + 'async_trait,
     Self: Sync
 {
     type Response = Output;

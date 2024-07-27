@@ -172,11 +172,14 @@ where
     }
 }
 
-impl<M, S, Target: Send, Request: Send> Service<Target> for IntoService<M, Request>
+#[async_trait::async_trait]
+impl<M, S, Target, Request> Service<Target> for IntoService<M, Request>
 where
     M: Service<Target, Response = S>,
     S: Service<Request>,
     Self: Send + Sync,
+    for<'async_trait>Request: Send + 'async_trait,
+    for<'async_trait>Target: Send + 'async_trait,
 {
     type Response = M::Response;
     type Error = M::Error;

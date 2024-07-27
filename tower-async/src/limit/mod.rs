@@ -40,6 +40,7 @@ where
     }
 }
 
+#[async_trait::async_trait]
 impl<T, P, Request> Service<Request> for Limit<T, P>
 where
     T: Service<Request>,
@@ -47,7 +48,7 @@ where
     P: policy::Policy<Request> + Sync,
     P::Error: Into<BoxError> + Send,
     P::Guard: Send,
-    Request: Send,
+    for<'async_trait>Request: Send + 'async_trait,
 {
     type Response = T::Response;
     type Error = BoxError;

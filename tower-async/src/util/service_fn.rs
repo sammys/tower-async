@@ -60,10 +60,12 @@ impl<T> fmt::Debug for ServiceFn<T> {
     }
 }
 
-impl<T: Send, F, Request: Send, R, E> Service<Request> for ServiceFn<T>
+#[async_trait::async_trait]
+impl<T: Send, F, Request, R, E> Service<Request> for ServiceFn<T>
 where
     T: Fn(Request) -> F,
     F: Future<Output = Result<R, E>> + Send,
+    for<'async_trait>Request: Send + 'async_trait,
     Self: Sync
 {
     type Response = R;
